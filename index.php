@@ -269,6 +269,7 @@ if ($handle = opendir($currentdir))
         if (preg_match("/.doc$|.docx$/i", $file)) $extension = "DOCX"; // Word
         if (preg_match("/.ppt$|.pptx$/i", $file)) $extension = "PPTX"; //Powerpoint
         if (preg_match("/.xls$|.xlsx$/i", $file)) $extension = "XLXS"; // Excel
+        if (preg_match("/.mid$|.midi$/i", $file)) $extension = "MIDI"; // MIDI
 
         if ($extension != "") {
             $files[] = array (
