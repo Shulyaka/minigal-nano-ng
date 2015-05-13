@@ -27,6 +27,7 @@ See a list of original features [here](http://www.minigal.dk/minigal-nano.html)
 
 ### To come
 * better templates
+* cache size control
 
 ## Semantic URLs
 

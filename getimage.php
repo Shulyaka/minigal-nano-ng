@@ -36,8 +36,8 @@ function getfirstImage($dirname) {
     {
         while(false !== ($file = readdir($handle)))
         {
-            $extension = strtolower(preg_replace('/^.*\./', '', $file));
-            if ($file[0] != '.' && (in_array($extension, $config['supported_image_types']) || in_array($extension, $config['supported_video_types']))) break;
+            $inext = strtolower(preg_replace('/^.*\./', '', $file));
+            if ($file[0] != '.' && (in_array($inext, $config['supported_image_types']) || in_array($inext, $config['supported_video_types']))) break;
         }
         $imageName = $file;
         closedir($handle);
@@ -45,116 +45,55 @@ function getfirstImage($dirname) {
     return($imageName);
 }
 
-function create_thumb($filename, $extension, $outfile, $size = 1024, $keepratio = true) {
-    global $config;
-    // Define variables
-    $target = null;
-    $xoord = 0;
-    $yoord = 0;
-    $height = $size;
-    $width = $size;
-
-    if ($config['caching'] && is_file($outfile) && filemtime($outfile)>=filemtime($filename)) {
-        if ($extension == 'gif')
-            header('Content-type: image/gif');
-        else
-            header('Content-type: image/jpeg');
-        readfile($outfile);     //Use the cache
-        return;
+function imagecopymerge_alpha($dst_im, $src_im, $dst_x, $dst_y, $src_x, $src_y, $src_w, $src_h, $pct){
+    // Main script by aiden dot mail at freemail dot hu
+    // Transformed to imagecopymerge_alpha() by rodrigo dot polo at gmail dot com
+    // Source: http://php.net/manual/en/function.imagecopymerge.php
+    if(!isset($pct)){
+        return false;
     }
-
-    ob_start();
-
-    if(is_dir($filename)) {
-        $isdir = true;
-        // Use .folder.jpg (if any):
-        if (file_exists($filename . "/.folder.jpg")) {
-            $filename = $filename . "/.folder.jpg";
-            $extension = "jpg";
-        } else {
-            // Set thumbnail to first image found (if any):
-            $firstimage = getfirstImage($filename);
-            if ($firstimage != "") {
-                $filename = $filename . "/" . $firstimage;
-		$extension = strtolower(preg_replace('/^.*\./', '', $filename));
-            } else {
-                // If no .folder.jpg or image is found, then display default icon:
-                header('Content-type: image/png');
-                readfile("images/folder_" . mb_strtolower($config['folder_color']) . ".png");
-                $filename = null;
-                $outfile = null;
-            }
-        }
-    } else
-        $isdir = false;
-
-    if ( $filename && in_array($extension, $config['supported_video_types']) ) {
-        // Video thumbnail
-        header('Content-type: image/jpeg');
-        passthru ("ffmpegthumbnailer -i " . escapeshellarg($filename) . " -o - -s " . escapeshellarg($size) . " -c jpeg -f" . ($keepratio? "" : " -a"));
-    } else if ($filename) {
-        // Image thumbnail
-        list($width_orig, $height_orig) = GetImageSize($filename);
-
-        if ($keepratio) {
-            // Get new dimensions
-            $ratio_orig = $width_orig/$height_orig;
-
-            if ($width_orig > $height_orig) {
-               $height = $width/$ratio_orig;
-            } else {
-               $width = $height*$ratio_orig;
-            }
-       } else {
-            // square thumbnail
-            if ($width_orig > $height_orig) { // If the width is greater than the height it’s a horizontal picture
-                $xoord = ceil(($width_orig-$height_orig)/2);
-                $width_orig = $height_orig;      // Then we read a square frame that  equals the width
-            } else {
-                $yoord = ceil(($height_orig-$width_orig)/2);
-                $height_orig = $width_orig;
-            }
-        }
-
-        if($keepratio && $size > $height_orig && $size > $width_orig) {
-            if ($extension == 'gif')
-                header('Content-type: image/gif');
-            else
-                header('Content-type: image/jpeg');
-            readfile($filename);
-            $outfile = null; //don't cache images that are equal to originals
-        } else {
-            // load source image
-            if ($extension == "jpg" || $extension == "jpeg")
-                $source = ImageCreateFromJPEG($filename);
-            else if ($extension == "gif")
-                $source = ImageCreateFromGIF($filename);
-            else if ($extension == "png")
-                $source = ImageCreateFromPNG($filename);
-
-            $target = ImageCreatetruecolor($width,$height);
-            imagecopyresampled($target,$source, 0,0, $xoord,$yoord, $width,$height, $width_orig,$height_orig);
-            imagedestroy($source);
-
-            if ($extension == "jpg" || $extension == "jpeg" || $extension == "png") {
-                header('Content-type: image/jpeg');
-                ImageJPEG($target,null,90);
-            } else if ($extension == "gif") {
-                header('Content-type: image/gif');
-                ImageGIF($target,null,90);
-            }
-            imagedestroy($target);
+    $pct /= 100;
+    // Get image width and height
+    $w = imagesx( $src_im );
+    $h = imagesy( $src_im );
+    // Turn alpha blending off
+    imagealphablending( $src_im, false );
+    // Find the most opaque pixel in the image (the one with the smallest alpha value)
+    $minalpha = 127;
+    for( $x = 0; $x < $w; $x++ )
+    for( $y = 0; $y < $h; $y++ ){
+        $alpha = ( imagecolorat( $src_im, $x, $y ) >> 24 ) & 0xFF;
+        if( $alpha < $minalpha ){
+            $minalpha = $alpha;
         }
     }
-
-    if($outfile)
-        file_put_contents($outfile,ob_get_contents());
-
-    ob_end_flush();
+    //loop through image pixels and modify alpha for each
+    for( $x = 0; $x < $w; $x++ ){
+        for( $y = 0; $y < $h; $y++ ){
+            //get current alpha value (represents the TANSPARENCY!)
+            $colorxy = imagecolorat( $src_im, $x, $y );
+            $alpha = ( $colorxy >> 24 ) & 0xFF;
+            //calculate new alpha
+            if( $minalpha !== 127 ){
+                $alpha = 127 + 127 * $pct * ( $alpha - 127 ) / ( 127 - $minalpha );
+            } else {
+                $alpha += 127 * $pct;
+            }
+            //get the color index with new alpha
+            $alphacolorxy = imagecolorallocatealpha( $src_im, ( $colorxy >> 16 ) & 0xFF, ( $colorxy >> 8 ) & 0xFF, $colorxy & 0xFF, $alpha );
+            //set pixel with the new color + opacity
+            if( !imagesetpixel( $src_im, $x, $y, $alphacolorxy ) ){
+                return false;
+            }
+        }
+    }
+    // The image copy
+    imagecopy($dst_im, $src_im, $dst_x, $dst_y, $src_x, $src_y, $src_w, $src_h);
 }
 
 
-$_GET['filename'] = "./" . $_GET['filename'];
+$infile=$_GET['filename'];
+$infile = "./" . $infile;
 if($_GET['mode'] == 'thumb') {
   $size=$config['thumb_size'];
   $keepratio=false;
@@ -164,28 +103,28 @@ if($_GET['mode'] == 'thumb') {
 }
 
 // Display error image if file isn't found
-if (preg_match("/\.\.\//i", $_GET['filename']) || !(is_file($_GET['filename']) || is_dir($_GET['filename']))) {
+if (preg_match("/\.\.\//i", $infile) || !(is_file($infile) || is_dir($infile))) {
     header('Content-type: image/jpeg');
     readfile('images/questionmark.jpg');
     exit;
 }
 
 // Display error image if file exists, but can't be opened
-if (substr(decoct(fileperms($_GET['filename'])), -1, strlen(fileperms($_GET['filename']))) < 4 OR substr(decoct(fileperms($_GET['filename'])), -3,1) < 4) {
+if (substr(decoct(fileperms($infile)), -1, strlen(fileperms($infile))) < 4 OR substr(decoct(fileperms($infile)), -3,1) < 4) {
     header('Content-type: image/jpeg');
     readfile('images/cannotopen.jpg');
     exit;
 }
 
-$extension = strtolower(preg_replace('/^.*\./', '', $_GET['filename']));
-if ( !is_dir($_GET['filename']) && !in_array($extension, $config['supported_image_types']) && !in_array($extension, $config['supported_video_types']) ) {
+$inext = strtolower(preg_replace('/^.*\./', '', $infile));
+if ( !is_dir($infile) && !in_array($inext, $config['supported_image_types']) && !in_array($inext, $config['supported_video_types']) ) {
     header('Content-type: image/jpeg');
     readfile('images/cannotopen.jpg');
     exit;
 }
 
 date_default_timezone_set("UTC");
-$filetimestamp=max(filemtime($_GET['filename']), filemtime("./getimage.php"), filemtime("./config.php"));
+$filetimestamp=max(filemtime($infile), filemtime("./getimage.php"), filemtime("./config.php"));
 $lastmodified=gmdate("D, d M Y H:i:s \G\M\T", $filetimestamp);
 $IfModifiedSince = 0;
 if (isset($_ENV['HTTP_IF_MODIFIED_SINCE']))
@@ -201,21 +140,171 @@ header("Cache-Control: public, must-revalidate");
 header("Vary: Last-Modified");
 header("Last-Modified: " . $lastmodified);
 
-if ($extension == 'gif')
-    $cleanext = 'gif';
-else
-    $cleanext = 'jpeg';
+$isdir = false;
+if(is_dir($infile)) {
+    $isdir = true;
+    $outext = 'png';
+    header('Content-type: image/png');
+} else if (in_array($inext, $config['supported_video_types'])) {
+    $outext = 'jpeg';
+    header('Content-type: image/jpeg');
+} else if ($inext == 'gif') {
+    $outext = 'gif';
+    header('Content-type: image/gif');
+} else if ($inext == 'png') {
+    $outext = 'png';
+    header('Content-type: image/png');
+} else {
+    $outext = 'jpeg';
+    header('Content-type: image/jpeg');
+}
 
 // Create paths for different picture versions
-$thumbnail = null;
+$outfile = null;
 
 if($config['caching']) {
-    $md5sum = md5($_GET['filename']);
-    $thumbnail = $config['cache_path'] . "/" . $md5sum . "_" . $size . "_" . ($keepratio?"keepratio":"square") . "." . $cleanext;
+    $md5sum = md5($infile);
+    $outfile = $config['cache_path'] . "/" . $md5sum . "_" . $size . "_" . ($keepratio?"keepratio":"square") . "." . $outext;
     if(!file_exists($config['cache_path']))
         mkdir($config['cache_path']);
 }
 
-create_thumb($_GET['filename'], $extension, $thumbnail, $size, $keepratio);
+if ($config['caching'] && is_file($outfile) && filemtime($outfile)>=$filetimestamp) {
+    readfile($outfile);     //Use the cache
+    return;
+}
 
+$target = null;
+$xoord = 0;
+$yoord = 0;
+$height = $size;
+$width = $size;
+
+ob_start();
+
+if(is_dir($infile)) {
+    // Use .folder.jpg (if any):
+    if (file_exists($infile . "/.folder.jpg")) {
+        $infile = $infile . "/.folder.jpg";
+        $inext = "jpg";
+    } else {
+        // Set thumbnail to first image found (if any):
+        $firstimage = getfirstImage($infile);
+        if ($firstimage != "") {
+            $infile = $infile . "/" . $firstimage;
+            $inext = strtolower(preg_replace('/^.*\./', '', $infile));
+        } else {
+            // If no .folder.jpg or image is found, then display default icon:
+            readfile("images/folder_" . mb_strtolower($config['folder_color']) . ".png");
+            $infile = null;
+            $outfile = null;
+        }
+    }
+}
+
+if ( $infile && in_array($inext, $config['supported_video_types']) ) {
+    // Video thumbnail
+    setlocale(LC_CTYPE, "en_US.UTF-8");
+    passthru ("ffmpegthumbnailer -i " . escapeshellarg($infile) . " -o - -s " . escapeshellarg($size) . " -c jpeg -f" . ($keepratio? "" : " -a"));
+    if($isdir) {
+        $target = ImageCreateFromString(ob_get_contents());
+        ob_end_clean();
+        ob_start();
+    }
+} else if ($infile) {
+    // Image thumbnail
+    list($width_orig, $height_orig) = GetImageSize($infile);
+
+    if ($keepratio) {
+        // Get new dimensions
+        $ratio_orig = $width_orig/$height_orig;
+
+        if ($width_orig > $height_orig) {
+            $height = $width/$ratio_orig;
+        } else {
+            $width = $height*$ratio_orig;
+        }
+    } else {
+        // square thumbnail
+        if ($width_orig > $height_orig) { // If the width is greater than the height it’s a horizontal picture
+            $xoord = ceil(($width_orig-$height_orig)/2);
+            $width_orig = $height_orig;      // Then we read a square frame that  equals the width
+        } else {
+            $yoord = ceil(($height_orig-$width_orig)/2);
+            $height_orig = $width_orig;
+        }
+    }
+
+    if(!$isdir && $keepratio && $size > $height_orig && $size > $width_orig) {
+        readfile($infile);
+        $outfile = null; //don't cache images that are equal to originals
+    } else {
+        // load source image
+	switch ($inext) {
+            case "gif":
+                $source = ImageCreateFromGIF($infile);
+                break;
+            case "png":
+                $source = ImageCreateFromPNG($infile);
+                imagealphablending($source, false);
+                imagesavealpha($source, true);
+                break;
+            case "jpg":
+            case "jpeg":
+                $source = ImageCreateFromJPEG($infile);
+                break;
+        }
+
+        $target = ImageCreatetruecolor($width,$height);
+        imagecopyresampled($target,$source, 0,0, $xoord,$yoord, $width,$height, $width_orig,$height_orig);
+        imagedestroy($source);
+
+        if(!$isdir) {
+            switch ($outext) {
+                case "gif":
+                    ImageGIF($target,null,90);
+                    break;
+                case "png":
+                    ImagePNG($target,null,9);
+                    break;
+                case "jpeg":
+                    ImageJPEG($target,null,90);
+                    break;
+            }
+            imagedestroy($target);
+        }
+    }
+}
+
+if($isdir && $infile) {
+    $source = $target;
+    $target = ImageCreateFromPNG("images/folder_" . mb_strtolower($config['folder_color']) . ".png");
+
+    imagealphablending($target, true);
+    imagesavealpha($target, true);
+
+    if(function_exists("imageaffine")) {
+        $transform = [0.35, 0.08, 0, 0.5, 0, 0];
+        $transformed = imageaffine($source, $transform);
+        imagedestroy($source);
+
+        imagecopymerge_alpha($target, $transformed, 41, 21, 0, 0, 120*($transform[0]+$transform[2])-0.5, 120*($transform[3]+$transform[1])-0.5, 50);
+        imagedestroy($transformed);
+    } else { // Fallback to square overlay. We could write our own imageaffine() but it's better to just upgrade php
+        $transformed=imagecreatetruecolor(60, 60);
+        imagecopyresized($transformed, $source, 0, 0, 0, 0, 60, 60, 120, 120);
+        imagedestroy($source);
+
+        imagecopymerge($target, $transformed, 25, 30, 0, 0, 60, 60, 50);
+        imagedestroy($transformed);
+    }
+
+    ImagePNG($target,null,9);
+    imagedestroy($target);
+}
+
+if($outfile)
+    file_put_contents($outfile,ob_get_contents());
+
+ob_end_flush();
 ?>
