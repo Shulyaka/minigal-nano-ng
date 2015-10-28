@@ -141,12 +141,7 @@ if (substr($reqdir, -2)=="//") $reqdir=substr($reqdir, 0, -1);
 if ($reqdir == "/") $reqdir = "";
 $currentdir = GALLERY_ROOT . "photos/" . $reqdir;
 
-//-----------------------
-// READ FILES AND FOLDERS
-//-----------------------
-$files = array();
-$dirs = array();
-if ($handle = opendir($currentdir))
+if(is_dir($currentdir))
 {
     date_default_timezone_set("UTC");
     $dirtimestamp=max(filemtime($currentdir), filemtime("./index.php"), filemtime("./config.php"), filemtime($integrate ? GALLERY_ROOT . "templates/integrate.html" : "./templates/" . $config['templatefile'] . ".html"), filemtime("./i18n/".$config['i18n'].".php"));
@@ -164,7 +159,15 @@ if ($handle = opendir($currentdir))
     header("Cache-Control: public, must-revalidate");
     header("Vary: Last-Modified");
     header("Last-Modified: " . $lastmodified);
+} else die("ERROR: Could not find $currentdir\n$php_errormsg");
 
+//-----------------------
+// READ FILES AND FOLDERS
+//-----------------------
+$files = array();
+$dirs = array();
+if ($handle = opendir($currentdir))
+{
     while (false !== ($file = readdir($handle)))
     {
         if (mb_substr($file, 0, 1) == "." && $file != ".captions.txt")

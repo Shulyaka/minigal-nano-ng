@@ -45,6 +45,47 @@ function getfirstImage($dirname) {
     return($imageName);
 }
 
+function get_orientation($filename) {
+    // Rotate JPG pictures
+    if (preg_match("/\.jpg$|\.jpeg$/i", $filename) && function_exists('exif_read_data') && function_exists('imagerotate')) {
+        $exif = exif_read_data($filename);
+        if (array_key_exists('IFD0', $exif)) {
+            switch($exif['IFD0']['Orientation']) {
+                case 6: // 90 rotate right
+                    return -90;
+                break;
+                case 8:    // 90 rotate left
+                    return 90;
+                break;
+            }
+        } else {
+            switch($exif['Orientation']) {
+                case 6: // 90 rotate right
+                    return -90;
+                break;
+                case 8:    // 90 rotate left
+                    return 90;
+                break;
+            }
+	}
+    }
+
+    return 0;
+}
+
+function rotate_image($source, $orientation) {
+    if(!$orientation)
+        return $source;
+
+    $sx=imagesx($source);
+    $sy=imagesy($source);
+
+    $dest=imagecreatetruecolor(max($sx,$sy), max($sx,$sy));
+    imagecopy($dest, $source, 0, 0, 0, 0, $sx, $sy);
+
+    return imagecrop(imagerotate($dest, $orientation, 0), array('x' => $sx>$sy?$sx-$sy:0 , 'y' => 0, 'width' => $sy, 'height'=> $sx));
+}
+
 function imagecopymerge_alpha($dst_im, $src_im, $dst_x, $dst_y, $src_x, $src_y, $src_w, $src_h, $pct){
     // Main script by aiden dot mail at freemail dot hu
     // Transformed to imagecopymerge_alpha() by rodrigo dot polo at gmail dot com
@@ -214,6 +255,13 @@ if ( $infile && in_array($inext, $config['supported_video_types']) ) {
 } else if ($infile) {
     // Image thumbnail
     list($width_orig, $height_orig) = GetImageSize($infile);
+    $orientation = get_orientation($infile);
+
+    if($orientation) {
+        $ratio_orig = $width_orig;
+        $width_orig = $height_orig;
+        $height_orig = $ratio_orig;
+    }
 
     if ($keepratio) {
         // Get new dimensions
@@ -251,7 +299,7 @@ if ( $infile && in_array($inext, $config['supported_video_types']) ) {
                 break;
             case "jpg":
             case "jpeg":
-                $source = ImageCreateFromJPEG($infile);
+                $source = rotate_image(ImageCreateFromJPEG($infile), $orientation);
                 break;
         }
 
