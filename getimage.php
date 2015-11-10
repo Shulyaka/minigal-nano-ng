@@ -83,7 +83,7 @@ function rotate_image($source, $orientation) {
     $dest=imagecreatetruecolor(max($sx,$sy), max($sx,$sy));
     imagecopy($dest, $source, 0, 0, 0, 0, $sx, $sy);
 
-    return imagecrop(imagerotate($dest, $orientation, 0), array('x' => $sx>$sy?$sx-$sy:0 , 'y' => 0, 'width' => $sy, 'height'=> $sx));
+    return imagecrop(imagerotate($dest, $orientation, 0), array('x' => $sx>$sy&&$orientation<0?$sx-$sy:0 , 'y' => 0, 'width' => $sy, 'height'=> $sx));
 }
 
 function imagecopymerge_alpha($dst_im, $src_im, $dst_x, $dst_y, $src_x, $src_y, $src_w, $src_h, $pct){
