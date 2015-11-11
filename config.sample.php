@@ -47,6 +47,7 @@ $config['debug']                  = false;
 
 //THUMBNAIL CACHING
 $config['caching']                = true;
+$config['zipcaching']             = false;
 
 //SMALL CACHE
 $config['small_enabled']          = true;

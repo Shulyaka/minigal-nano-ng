@@ -145,6 +145,7 @@ if($_GET['mode'] == 'thumb') {
 
 // Display error image if file isn't found
 if (preg_match("/\.\.\//i", $infile) || !(is_file($infile) || is_dir($infile))) {
+    header($_SERVER['SERVER_PROTOCOL'] . " 404 Not Found");
     header('Content-type: image/jpeg');
     readfile('images/questionmark.jpg');
     exit;
@@ -152,6 +153,7 @@ if (preg_match("/\.\.\//i", $infile) || !(is_file($infile) || is_dir($infile))) 
 
 // Display error image if file exists, but can't be opened
 if (substr(decoct(fileperms($infile)), -1, strlen(fileperms($infile))) < 4 OR substr(decoct(fileperms($infile)), -3,1) < 4) {
+    header($_SERVER['SERVER_PROTOCOL'] . " 403 Forbidden");
     header('Content-type: image/jpeg');
     readfile('images/cannotopen.jpg');
     exit;
@@ -159,13 +161,14 @@ if (substr(decoct(fileperms($infile)), -1, strlen(fileperms($infile))) < 4 OR su
 
 $inext = strtolower(preg_replace('/^.*\./', '', $infile));
 if ( !is_dir($infile) && !in_array($inext, $config['supported_image_types']) && !in_array($inext, $config['supported_video_types']) ) {
+    header($_SERVER['SERVER_PROTOCOL'] . " 403 Forbidden");
     header('Content-type: image/jpeg');
     readfile('images/cannotopen.jpg');
     exit;
 }
 
 date_default_timezone_set("UTC");
-$filetimestamp=max(filemtime($infile), filemtime("./getimage.php"), filemtime("./config.php"));
+$filetimestamp=max(filemtime($infile), filemtime(__FILE__), filemtime("./config.php"));
 $lastmodified=gmdate("D, d M Y H:i:s \G\M\T", $filetimestamp);
 $IfModifiedSince = 0;
 if (isset($_ENV['HTTP_IF_MODIFIED_SINCE']))
@@ -246,7 +249,7 @@ if(is_dir($infile)) {
 if ( $infile && in_array($inext, $config['supported_video_types']) ) {
     // Video thumbnail
     setlocale(LC_CTYPE, "en_US.UTF-8");
-    passthru ("ffmpegthumbnailer -i " . escapeshellarg($infile) . " -o - -s " . escapeshellarg($size) . " -c jpeg -f" . ($keepratio? "" : " -a"));
+    passthru ($config['ffmpegthumbnailer'] . " -i " . escapeshellarg($infile) . " -o - -s " . escapeshellarg($size) . " -c jpeg -f" . ($keepratio? "" : " -a"));
     if($isdir) {
         $target = ImageCreateFromString(ob_get_contents());
         ob_end_clean();

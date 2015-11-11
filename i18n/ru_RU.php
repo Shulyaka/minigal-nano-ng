@@ -26,6 +26,7 @@ $i18n['label_page']             = "Страница"; //Text used for page navig
 $i18n['label_all']              = "Всё"; //Text used for link to display all images in one page
 $i18n['label_noimages']         = "В этом альбоме нет фотографий"; //Empty folder text
 $i18n['label_loading']          = "Загрузка..."; //Thumbnail loading text
+$i18n['label_download']         = " (Скачать)"; //Archive download text
 
 $i18n['msg_update_available']   = "Доступно обновление MiniGal Nano NG %s!";
 $i18n['msg_first_run']          = "Судя по всему, Вы только что установили MiniGal Nano NG. Пожалуйста, запустите <a href='system_check.php'>проверку системной конфигурации</a>";

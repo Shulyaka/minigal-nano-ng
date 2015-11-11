@@ -26,6 +26,7 @@ $i18n['label_page']             = "Page"; //Text used for page navigation
 $i18n['label_all']              = "All"; //Text used for link to display all images in one page
 $i18n['label_noimages']         = "No images"; //Empty folder text
 $i18n['label_loading']          = "Loading..."; //Thumbnail loading text
+$i18n['label_download']         = " (Download)"; //Archive download text
 
 $i18n['msg_update_available']   = "MiniGal Nano NG %s is available!";
 $i18n['msg_first_run']          = "It looks like you are on a fresh installation. Please run the <a href='system_check.php'>system check</a>";

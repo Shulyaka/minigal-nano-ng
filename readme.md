@@ -51,6 +51,10 @@ Please add the following lines into your nginx configuration for the correspondi
 		}
 		rewrite ^(/.*?)/small/(.*)$ $1/getimage.php?mode=small&filename=photos/$2 last;
 		rewrite ^(/.*?)/thumb/(.*)$ $1/getimage.php?mode=thumb&filename=photos/$2 last;
+		rewrite ^(/.*?)/archive/(.*)\.zip$ $1/getzip.php?rewrite=1&filename=photos/$2 last;
+		if (!-e $request_filename) {
+			rewrite ^(/.*?)/photos.zip $1/getzip.php?rewrite=1&filename=photos last;
+		}
 		if ($query_string ~ "^dir=([^&]*)$") {
 			set $dir $1;
 			rewrite ^(/.*)/$ $1/photos/$dir? permanent;

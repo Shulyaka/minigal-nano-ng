@@ -144,7 +144,7 @@ $currentdir = GALLERY_ROOT . "photos/" . $reqdir;
 if(is_dir($currentdir))
 {
     date_default_timezone_set("UTC");
-    $dirtimestamp=max(filemtime($currentdir), filemtime("./index.php"), filemtime("./config.php"), filemtime($integrate ? GALLERY_ROOT . "templates/integrate.html" : "./templates/" . $config['templatefile'] . ".html"), filemtime("./i18n/".$config['i18n'].".php"));
+    $dirtimestamp=max(filemtime($currentdir), filemtime(__FILE__), filemtime("./config.php"), filemtime($integrate ? GALLERY_ROOT . "templates/integrate.html" : "./templates/" . $config['templatefile'] . ".html"), filemtime("./i18n/".$config['i18n'].".php"));
     $lastmodified=gmdate("D, d M Y H:i:s \G\M\T", $dirtimestamp);
     $IfModifiedSince = 0;
     if (isset($_ENV['HTTP_IF_MODIFIED_SINCE']))
@@ -368,8 +368,7 @@ if ($_GET['dir'] != "")
     $navitems = explode("/", substr($reqdir, -1)=="/"? substr($reqdir, 0, -1) : $reqdir);
     for($i = 0; $i < sizeof($navitems); $i++)
     {
-        if ($i == sizeof($navitems)-1) $breadcrumb_navigation .= $navitems[$i];
-        else
+        if ($i != sizeof($navitems)-1)
         {
             if($_REQUEST["rewrite"])
                 $breadcrumb_navigation .= "<a href='" . $uri_prefix . "photos/";
@@ -382,8 +381,26 @@ if ($_GET['dir'] != "")
             }
             $breadcrumb_navigation .= "'>" . $navitems[$i] . "</a> > ";
         }
+        else
+        {
+            if($_REQUEST["rewrite"])
+                $breadcrumb_navigation .= "<a href='" . $uri_prefix . "archive/";
+            else
+                $breadcrumb_navigation .= "<a href='" . $uri_prefix . "getzip.php?filename=photos/";
+            for ($x = 0; $x <= $i; $x++)
+            {
+                $breadcrumb_navigation .= rawurlencode($navitems[$x]);
+                if ($x < $i) $breadcrumb_navigation .= "/";
+            }
+            if($_REQUEST["rewrite"])
+                $breadcrumb_navigation .= ".zip";
+            $breadcrumb_navigation .= "'>" . $navitems[$i] . $i18n['label_download'] . "</a>";
+        }
     }
-} else $breadcrumb_navigation .= $i18n['label_home'];
+} else if($_REQUEST["rewrite"])
+    $breadcrumb_navigation .= "<a href='" . $uri_prefix . "photos.zip'>" . $i18n['label_home'] . $i18n['label_download'] . "</a>";
+else
+    $breadcrumb_navigation .= "<a href='" . $uri_prefix . "getzip.php?filename=photos'>" . $i18n['label_home'] . $i18n['label_download'] . "</a>";
 
 //Include hidden links for all images BEFORE current page so lightbox is able to browse images on different pages
 for ($y = 0; $y < $offset_start - sizeof($dirs); $y++)
