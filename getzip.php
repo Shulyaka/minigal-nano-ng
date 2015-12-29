@@ -59,7 +59,7 @@ header("Last-Modified: " . $lastmodified);
 
 
 setlocale(LC_CTYPE, "en_US.UTF-8");
-$zipcmd = "cd " . escapeshellarg(dirname($infile)) . " && find " . escapeshellarg(basename($infile)) . " -type d -name \.\* -prune -false -o \( -type f \( ";
+$zipcmd = "cd " . escapeshellarg(dirname($infile)) . " && find " . escapeshellarg(basename($infile)) . " -mindepth 1 -type d -name \.\* -prune -false -o \( -type f \( ";
 
 $haveone=0;
 reset($config['supported_image_types']);
