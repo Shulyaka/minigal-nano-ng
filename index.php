@@ -80,14 +80,14 @@ function readEXIF($file) {
         $emodel = $exif_idf0['Model'];
 
         $efocal = $exif_idf0['FocalLength'];
-        list($x,$y) = split('/', $efocal);
+        list($x,$y) = explode('/', $efocal);
         $efocal = round($x/$y,0);
 
         $exif_exif = exif_read_data ($file,'EXIF' ,0 );
         $eexposuretime = $exif_exif['ExposureTime'];
 
         $efnumber = $exif_exif['FNumber'];
-        list($x,$y) = split('/', $efnumber);
+        list($x,$y) = explode('/', $efnumber);
         $efnumber = round($x/$y,0);
 
         $eiso = $exif_exif['ISOSpeedRatings'];
