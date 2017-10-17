@@ -58,7 +58,7 @@ function get_orientation($filename) {
                     return 90;
                 break;
             }
-        } else {
+        } else if (array_key_exists('Orientation', $exif)){
             switch($exif['Orientation']) {
                 case 6: // 90 rotate right
                     return -90;

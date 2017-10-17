@@ -53,6 +53,8 @@ $config['zipcaching']             = false;
 $config['small_enabled']          = true;
 $config['small_size']             = 1024; //Size (width) of the images displayed in the gallery. Images are scaled proportionally
 
+$config['zipcaching']             = false;
+
 $config['version']                = "0.3.5";
 
 return 'MINIGAL_INCLUDE_OK';
