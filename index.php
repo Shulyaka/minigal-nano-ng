@@ -129,10 +129,10 @@ else
 	$integrate=true;
 
 if($_REQUEST["rewrite"]) {
-	if(substr($_SERVER['PHP_SELF'], -strlen("index.php"))==="index.php")
-		$uri_prefix=substr($_SERVER['PHP_SELF'], 0, -strlen("index.php")) . GALLERY_ROOT;
+	if(substr($_SERVER['SCRIPT_NAME'], -strlen("index.php"))==="index.php")
+		$uri_prefix=substr($_SERVER['SCRIPT_NAME'], 0, -strlen("index.php")) . GALLERY_ROOT;
 	else
-		$uri_prefix=$_SERVER['PHP_SELF'] . GALLERY_ROOT;
+		$uri_prefix=$_SERVER['SCRIPT_NAME'] . GALLERY_ROOT;
 } else
 	$uri_prefix=GALLERY_ROOT;
 
